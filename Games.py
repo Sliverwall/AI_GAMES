@@ -1,4 +1,5 @@
 import tkinter as tk
+from tkinter import messagebox
 from Bots import RSP_Bot
 from SQL_Query import SQL_Query
 class RockPaperScissors:
@@ -17,6 +18,9 @@ class RockPaperScissors:
 
         # get current user information
         userData = self.database.getActiveUser()
+        if not userData:
+            messagebox.showinfo("Task failed", "Please login to play!")
+            
         self.userID, self.userName = userData[0], userData[1]
         
         self.database.createGame()
@@ -25,13 +29,16 @@ class RockPaperScissors:
         gameData = self.database.getGamesData()
 
         # Initialize current game rows
-        self.gameID, self.gameWins, self.gameLoses = gameData[0], gameData[2], gameData[3]
+        self.gameID, self.gameWins, self.gameLoses, self.gameDraws = gameData[0], gameData[2], gameData[3], gameData[4]
+
+        self.winRate = 0.0
+        self.totalMoves = 0
 
         # Labels for game display
         self.user_label = tk.Label(self.frame, text=f"Welcome to Rock, Paper, Scissiors {self.userName}!")
         self.user_label.pack(pady=10)
 
-        self.game_label = tk.Label(self.frame, text=f"Game id: {self.gameID}, currentScore: {self.gameWins} - {self.gameLoses}")
+        self.game_label = tk.Label(self.frame, text=f"Game id: {self.gameID}, Score: {self.gameWins}/{self.gameDraws}/{self.gameLoses}, win rate: {self.winRate}%")
         self.game_label.pack(pady=10)
 
         self.result_label = tk.Label(self.frame, text="Results displayed here: ")
@@ -81,9 +88,11 @@ class RockPaperScissors:
         gameData = self.database.getGamesData()
 
         # re-Initialize current game rows
-        self.gameID, self.gameWins, self.gameLoses = gameData[0], gameData[2], gameData[3]
+        self.gameID, self.gameWins, self.gameLoses, self.gameDraws = gameData[0], gameData[2], gameData[3], gameData[4]
+        self.totalMoves = gameData[1]
+        self.winRate = round((self.gameWins/self.totalMoves)*100,2)
 
-        
+        self.game_label.config(text=f"Game id: {self.gameID}, Score: {self.gameWins}/{self.gameDraws}/{self.gameLoses}, win rate: {self.winRate}%")
 
     def evaluteResult(self, userInput, botInput):
 

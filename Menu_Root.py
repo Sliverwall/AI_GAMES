@@ -6,6 +6,10 @@ class Menu_Root:
         self.root = root
         self.actions = actions
 
+
+        # On Shutdown
+
+        self.root.protocol("WM_DELETE_WINDOW", self.actions.on_closing)
         # Configure taskbar
         self.menu_bar = Menu(self.root)
 

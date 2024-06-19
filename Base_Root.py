@@ -10,8 +10,8 @@ class Base_Root:
         self.root.title(MAIN_TITLE)
 
         # Main landing page (could be any widget)
-        MAIN_HEIGHT = 500
-        MAIN_WIDTH = 600
+        MAIN_HEIGHT = 300
+        MAIN_WIDTH = 500
         # self.main_frame = tk.Frame(self.root, width=MAIN_WIDTH, height=MAIN_HEIGHT, bg='lightgray')
         # self.main_frame.pack(padx=20, pady=20)
 

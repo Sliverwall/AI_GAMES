@@ -8,7 +8,19 @@ class Menu_Actions():
         self.root = root
 
 
+# -------------- Shut down actions ----------------------------
+    def on_closing(self):
+        if messagebox.askokcancel("Quit", "Do you want to quit?"):
+            database = SQL_Query("AI_Games")
 
+            currentUserData = database.getActiveUser()
+            if currentUserData:
+                userName = currentUserData[1]
+
+                database.logoutUser(userName)
+
+                messagebox.showinfo("Logout confirmation", f"{userName} logging out.")
+            self.root.destroy()
 # ------------- FILE menu actions -----------------------------
     def new_file(self):
         # Placeholder for 'New File' functionality
