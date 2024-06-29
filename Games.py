@@ -8,9 +8,14 @@ class RockPaperScissors:
         self.frame = tk.Frame(self.root)
         self.database = SQL_Query("AI_Games")
 
+        self.botInputHistory = []
+        self.userInputHistory = []
+        self.botWinHistory = []
+
         # initialize bot manually for now
-        self.bot = RSP_Bot("proto-bot")
-        self.botID = 1
+        self.botID = 6
+        self.bot = RSP_Bot(self.botID)
+
         
         rock = "R"
         paper = "P"
@@ -56,9 +61,23 @@ class RockPaperScissors:
 
     def play_game(self, userInput):
 
-        botInput = self.bot.make_move()
+        # determine bot move using custom bot's moves
+        botInput = self.bot.make_move(self.botInputHistory,self.userInputHistory,self.botWinHistory)
+        print(self.bot.currentMethod)
 
+        # update current game's move history in memory
+        self.botInputHistory.append(botInput)
+        self.userInputHistory.append(userInput)
+
+        # detemrine result
         result = self.evaluteResult(userInput, botInput)
+
+        # update botHistoryWin
+        if result == 1: 
+            self.botWinHistory.append(1)
+        else:
+            self.botWinHistory.append(0)
+            
 
 
 
