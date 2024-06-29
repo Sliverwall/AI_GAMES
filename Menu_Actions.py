@@ -13,14 +13,18 @@ class Menu_Actions():
         if messagebox.askokcancel("Quit", "Do you want to quit?"):
             database = SQL_Query("AI_Games")
 
-            currentUserData = database.getActiveUser()
-            if currentUserData:
-                userName = currentUserData[1]
+            try:
+                currentUserData = database.getActiveUser()
+                if currentUserData:
+                    userName = currentUserData[1]
 
-                database.logoutUser(userName)
+                    database.logoutUser(userName)
 
-                messagebox.showinfo("Logout confirmation", f"{userName} logging out.")
-            self.root.destroy()
+                    messagebox.showinfo("Logout confirmation", f"{userName} logging out.")
+                self.root.destroy()
+            except:
+                messagebox.showinfo("Error", "Something happened. closing app")
+                self.root.destroy()
 # ------------- FILE menu actions -----------------------------
     def new_file(self):
         # Placeholder for 'New File' functionality
@@ -88,7 +92,7 @@ class Menu_Actions():
 
         # Ensure password confirmation and unique username
         database = SQL_Query("AI_Games")
-        if password == confirm_password and database.checkUser(username) == username:
+        if password == confirm_password and database.checkUser(username) == "unique":
             # Optionally, show a message box confirming user creation
             database.updateUser(username, password, email)
             messagebox.showinfo("User Created", f"User {username} created successfully!")

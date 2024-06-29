@@ -28,7 +28,10 @@ class SQL_Query():
     def checkUser(self, name):
         userNameRow = self.getUserData(name)
 
-        return userNameRow[1]
+        if userNameRow:
+            return userNameRow[1]
+        else:
+            return "unique"
     
     def getUserUniqueID(self, name):
         userNameRow = self.getUserData(name)
