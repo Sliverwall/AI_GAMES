@@ -63,7 +63,6 @@ class RockPaperScissors:
 
         # determine bot move using custom bot's moves
         botInput = self.bot.make_move(self.botInputHistory,self.userInputHistory,self.botWinHistory)
-        print(self.bot.currentMethod)
 
         # update current game's move history in memory
         self.botInputHistory.append(botInput)
@@ -112,6 +111,7 @@ class RockPaperScissors:
         self.winRate = round((self.gameWins/self.totalMoves)*100,2)
 
         self.game_label.config(text=f"Game id: {self.gameID}, Score: {self.gameWins}/{self.gameDraws}/{self.gameLoses}, win rate: {self.winRate}%")
+
 
     def evaluteResult(self, userInput, botInput):
 

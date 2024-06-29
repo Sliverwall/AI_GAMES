@@ -1,10 +1,15 @@
 from Bots import *
 
 
+testBot = RSP_Bot(6)
 
-testBot = RSP_Bot(1)
+userInputHistory = ["R", "R", "R", "R", "R","R"]
+botInputHistory = ["S","R"]
+botWinHistory = [0, 0]
 
-userInputHistory = ["R","R", "R", "R"]
-
-print(testBot.usualNextMove(userInputHistory))
 print(testBot.majorityBot(userInputHistory))
+print(testBot.usualNextMoveBot(userInputHistory))
+            
+
+
+

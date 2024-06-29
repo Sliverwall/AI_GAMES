@@ -1,11 +1,21 @@
 import random
+import math
+
 
 class RSP_Bot():
     def __init__(self, botID) -> None:
         self.choices = ["R", "P", "S"]
         self.botID = botID
-        self.currentMethod = 5
-
+        self.votingHistory = [] # keep voting history
+        self.methodList = [1,2,3,4,5,7] # store use cases for main move method, exclude random
+        self.botScore = {1:0, # random
+                    2:0, #counter
+                    3:0, #majority
+                    4:0, #counterClockWise
+                    5:0, #usualNextMove
+                    7:0 #againstMajority
+                    }
+ 
     def make_move(self, botInputHistory, userInputHistory, botWinHisotry):
         # determine method to use based off botID
 
@@ -17,11 +27,13 @@ class RSP_Bot():
             case 3:
                 return self.majorityBot(userInputHistory)
             case 4:
-                return self.counterClockWiseMove(botInputHistory)
+                return self.counterClockWiseMoveBot(botInputHistory)
             case 5:
-                return self.usualNextMove(userInputHistory)
+                return self.usualNextMoveBot(userInputHistory)
             case 6:
-                return self.basicMixMove(botInputHistory,userInputHistory, botWinHisotry)
+                return self.votingBot(userInputHistory,botInputHistory,botWinHisotry)
+            case 7:
+                return self.againstMajorityBot(userInputHistory)
     def randomBot(self):
         # bot id = 1
         return random.choice(self.choices)
@@ -65,7 +77,7 @@ class RSP_Bot():
                 return "S"
             case "S":
                 return "R"
-    def counterClockWiseMove(self, botInputHistory):
+    def counterClockWiseMoveBot(self, botInputHistory):
         # bot id = 4
         # get botInputHistory, then move counter clock-wise R <- P <- S
         if botInputHistory == []:
@@ -82,21 +94,20 @@ class RSP_Bot():
                 case "S":
                     return "P"
     
-    def usualNextMove(self, userInputHistory):
+    def usualNextMoveBot(self, userInputHistory):
         # botID = 5
 
         # Look at pairs of moves, and find the most common third response
+        # clone userInputHistory as to not mutate actual list
+        clonedUserInputHistory = userInputHistory.copy()
 
         # before potentially imputing move, grab last userInputMove
-        if userInputHistory != []:
-            lastUserMove = userInputHistory[-1]
+        if clonedUserInputHistory != []:
+            lastUserMove = clonedUserInputHistory[-1]
         else:
             lastUserMove = random.choice(self.choices)
 
-        # if list length is not even, imput random move
-        if len(userInputHistory) % 2 != 0:
-            userInputHistory.append(random.choice(self.choices))
-        if len(userInputHistory) < 2:
+        if len(clonedUserInputHistory) < 2:
             predictedUserMove = random.choice(self.choices)
         else:
             # init hashMap
@@ -111,7 +122,7 @@ class RSP_Bot():
                        "SS": 0}
             # sort userInput into pairs
             # Pair each letter with its next neighbor using zip
-            pairedUserInput = ["".join(pair) for pair in zip(userInputHistory[0::2], userInputHistory[1::2])]
+            pairedUserInput = ["".join(pair) for pair in zip(clonedUserInputHistory[0::2], clonedUserInputHistory[1::2])]
 
             for pair in pairedUserInput:
                 # only count pairs related to lastUserInput
@@ -129,29 +140,109 @@ class RSP_Bot():
                 return "S"
             case "S":
                 return "R"
-    def basicMixMove(self, userInputHistory, botInputHistory, botWinHistory):
+    def votingBot(self, userInputHistory, botInputHistory, botWinHistory):
         # Keep track of current move
         currentMove = len(userInputHistory)
 
-        methodList = [3,5] # store use cases for main move method, exclude random
+        # if not history just return random
+        if currentMove == 0:
+            return random.choice(self.choices)
 
-        # Switch between methods
-        # use random moves while building history
-        if currentMove < 5:
-            self.currentMethod = 1
+        # update bot scores based on previous history
+        self.updateBotScores(userInputHistory, self.methodList)
+
+
+        # Voting stage
+        votingList = [] # list to tally up votes
+
+        storeBotID = self.botID # will change botID while cycling methods
+
+        # print(f"bothistory: {botInputHistory}\n,userHistory: {userInputHistory}\n,botWinHistory : {botWinHistory}")
+        for method in self.methodList:
+            self.botID = method
+            vote = self.make_move(botInputHistory,userInputHistory,botWinHistory)
+            votingList.append(vote)
         
-        if len(botWinHistory) >= 5 and sum(botWinHistory[-5:]) < 3:
-            self.currentMethod = random.choice(methodList)
+
+        print(votingList) # print ballet for debuging
+        print(self.botScore) # print method scores for debugging
+
+        self.botID = storeBotID # reassign botID
+        # init hashMap
+        moveMap = {"R": 0,
+                    "P": 0,
+                    "S": 0}
         
-        # call from list of methods
-        match self.currentMethod:
-            case 1: 
-                return self.randomBot()
-            case 2:
-                return self.counterBot(userInputHistory)
-            case 3:
-                return self.majorityBot(userInputHistory[-5:])
-            case 4:
-                return self.counterClockWiseMove(botInputHistory)
-            case 5:
-                return self.usualNextMove(userInputHistory[-5:])
+        # scale voting power based on past performance
+        for index, item in enumerate(votingList):
+            currentMethod = self.methodList[index]
+            currentScore = self.botScore[currentMethod]
+            maxScoreKey = max(self.botScore, key=self.botScore.get)
+            maxScore = self.botScore[maxScoreKey]
+
+            votingPower = (math.e)**(currentScore - maxScore) # expo e to get voting power
+
+            moveMap[item] += votingPower
+
+        print(moveMap) # print for debugging purposes
+        
+        # bot's desired vote
+        predictedBotMove = max(moveMap, key=moveMap.get)
+
+        # save votingList in voting batch history
+        self.votingHistory.append(votingList)
+
+        return predictedBotMove
+    
+
+    def againstMajorityBot(self, userInputHistory):
+        majorityVote = self.majorityBot(userInputHistory)
+
+        # choose the losing move from majority bot's perspective
+        match majorityVote:
+            case "R":
+                return "P"
+            case "P":
+                return "S"
+            case "S":
+                return "R"
+
+    # --------------------helper methods-------------------------------------------
+    def evaluteResult(self, userInput, botInput):
+
+        joinedInput = f"{userInput}_{botInput}"
+
+        # set conditional values
+        win = 2
+        draw = 0
+        lose = 1
+        # resultDict to store user vs bot outcomes posibilities
+        resultDict = {"R_R": draw,
+                    "R_P": lose,
+                    "R_S": win,
+                    "P_R": win,
+                    "P_P": draw,
+                    "P_S": lose,
+                    "S_R": lose,
+                    "S_P": win,
+                    "S_S": draw}
+        # user result as stored in resultDict
+        userResult = resultDict[joinedInput] # botResult = 0 - userResult
+
+        return userResult
+    
+    def updateBotScores(self, userInputHistory, methodList):
+        for move in userInputHistory:
+            for voteBatch in self.votingHistory:
+                for index, vote in enumerate(voteBatch):
+                    bot = methodList[index]
+                    outcome = self.evaluteResult(move, vote) # 2 bot loses, 0 draw, 1 bot wins
+                    # penalize loses, record scores, do not punish or reward draws
+                    if outcome == 2:
+                        self.botScore[bot] -=1
+                    elif outcome == 1:
+                        self.botScore[bot] +=1
+                    elif outcome == 0:
+                        self.botScore[bot] -= 0.5 # take away half a point for drawing
+
+            
