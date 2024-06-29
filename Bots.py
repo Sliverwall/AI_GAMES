@@ -41,7 +41,7 @@ class RSP_Bot():
             case 5:
                 return self.usualNextMoveBot(userInputHistory)
             case 6:
-                return self.votingBot(userInputHistory,botInputHistory,botWinHisotry)
+                return self.votingBot(userInputHistory,botInputHistory)
             case 7:
                 return self.againstMajorityBot(userInputHistory)
             case 8:
@@ -156,7 +156,7 @@ class RSP_Bot():
                 return "S"
             case "S":
                 return "R"
-    def votingBot(self, userInputHistory, botInputHistory, botWinHistory):
+    def votingBot(self, userInputHistory, botInputHistory):
         # Keep track of current move
         currentMove = len(userInputHistory)
 
@@ -181,10 +181,9 @@ class RSP_Bot():
 
         storeBotID = self.botID # will change botID while cycling methods
 
-        # print(f"bothistory: {botInputHistory}\n,userHistory: {userInputHistory}\n,botWinHistory : {botWinHistory}")
         for method in self.methodList:
             self.botID = method
-            vote = self.make_move(botInputHistory,userInputHistory,botWinHistory)
+            vote = self.make_move(botInputHistory,userInputHistory)
             votingList.append(vote)
         
 

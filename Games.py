@@ -10,7 +10,6 @@ class RockPaperScissors:
 
         self.botInputHistory = []
         self.userInputHistory = []
-        self.botWinHistory = []
 
         # initialize bot manually for now
         self.botID = 6
@@ -62,7 +61,7 @@ class RockPaperScissors:
     def play_game(self, userInput):
 
         # determine bot move using custom bot's moves
-        botInput = self.bot.make_move(self.botInputHistory,self.userInputHistory,self.botWinHistory)
+        botInput = self.bot.make_move(self.botInputHistory,self.userInputHistory)
 
         # update current game's move history in memory
         self.botInputHistory.append(botInput)
@@ -71,11 +70,6 @@ class RockPaperScissors:
         # detemrine result
         result = self.evaluteResult(userInput, botInput)
 
-        # update botHistoryWin
-        if result == 1: 
-            self.botWinHistory.append(1)
-        else:
-            self.botWinHistory.append(0)
             
 
 
