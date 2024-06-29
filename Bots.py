@@ -7,6 +7,8 @@ class RSP_Bot():
         self.choices = ["R", "P", "S"]
         self.botID = botID
         self.votingHistory = []
+
+        # Initialize methods
         self.methodList = [1,2,3,4,5,7,8,9, 10] # store use cases for main move method, exclude random
         self.botScore = {1:0, # random
                     2:0, #counter
@@ -18,6 +20,11 @@ class RSP_Bot():
                     9:0, #assumeClockwise
                     10:0 #assumeCounterClockWise
                     }
+
+        # reward points
+        self.winBonus = 1
+        self.loseBouns = -1
+        self.drawBonus = -0.5
  
     def make_move(self, botInputHistory, userInputHistory, botWinHisotry):
         # determine method to use based off botID
@@ -199,12 +206,13 @@ class RSP_Bot():
             moveMap[item] += votingPower
 
         # DEBUGGING
-        # print(f"vote list: {votingList}") # print ballet for debuging
-        # print(f"botScores: {self.botScore}") # print method scores for debugging
-        # print(f"moveMap {moveMap}") # print for debugging purposes
+        print(f"vote list: {votingList}") # print ballet for debuging
+        print(f"botScores: {self.botScore}") # print method scores for debugging
+        print(f"moveMap {moveMap}") # print for debugging purposes
 
         # bot's desired vote
         predictedBotMove = max(moveMap, key=moveMap.get)
+        
 
         # save votingList in voting batch history
         self.votingHistory.append(votingList)
@@ -302,7 +310,13 @@ class RSP_Bot():
 
         return userResult
     
-    def updateBotScores(self, userInputHistory):
+    def updateBotScores(self, userInputHistory, resetHisotry = True):
+        # Determine the range of moves to check if resetting history
+        if resetHisotry:
+            if len(userInputHistory) % 5 == 0:
+                for key in self.botScore.keys():
+                    self.botScore[key] = 0
+
         # Loop through each move in userInputHistory along with its corresponding vote batch
         for i, move in enumerate(userInputHistory):
             if i < len(self.votingHistory):
@@ -312,13 +326,13 @@ class RSP_Bot():
                     bot = self.methodList[index]
                     outcome = self.evaluteResult(move, vote)  # 2 bot loses, 0 draw, 1 bot wins
                     # DEBUGGING
-                    print(f"Move: {move}, Vote: {vote}, Bot: {bot}, Outcome: {outcome}")
+                    # print(f"Move: {move}, Vote: {vote}, Bot: {bot}, Outcome: {outcome}")
                     # Reward system
                     if outcome == 2:
-                        self.botScore[bot] -= 1
+                        self.botScore[bot] += self.loseBouns
                     elif outcome == 1:
-                        self.botScore[bot] += 1
+                        self.botScore[bot] += self.winBonus
                     elif outcome == 0:
-                        self.botScore[bot] -= 1  # penalty for drawing
+                        self.botScore[bot] += self.drawBonus
         return self.botScore
             
