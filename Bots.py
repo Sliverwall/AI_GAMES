@@ -6,14 +6,17 @@ class RSP_Bot():
     def __init__(self, botID) -> None:
         self.choices = ["R", "P", "S"]
         self.botID = botID
-        self.votingHistory = [] # keep voting history
-        self.methodList = [1,2,3,4,5,7] # store use cases for main move method, exclude random
+        self.votingHistory = []
+        self.methodList = [1,2,3,4,5,7,8,9, 10] # store use cases for main move method, exclude random
         self.botScore = {1:0, # random
                     2:0, #counter
                     3:0, #majority
                     4:0, #counterClockWise
                     5:0, #usualNextMove
-                    7:0 #againstMajority
+                    7:0, #againstMajority
+                    8:0, #copyCat
+                    9:0, #assumeClockwise
+                    10:0 #assumeCounterClockWise
                     }
  
     def make_move(self, botInputHistory, userInputHistory, botWinHisotry):
@@ -34,6 +37,12 @@ class RSP_Bot():
                 return self.votingBot(userInputHistory,botInputHistory,botWinHisotry)
             case 7:
                 return self.againstMajorityBot(userInputHistory)
+            case 8:
+                return self.copyCatBot(userInputHistory)
+            case 9:
+                return self.assumeClockWiseMoveBot(userInputHistory)
+            case 10:
+                return self.assumeCounterClockWiseMoveBot(userInputHistory)
     def randomBot(self):
         # bot id = 1
         return random.choice(self.choices)
@@ -86,13 +95,13 @@ class RSP_Bot():
             # get last bot move
             lastBotMove = botInputHistory[-1]
             # match case then move counter clock-wise
-            match lastBotMove:
-                case "R":
-                  return "S"
-                case "P":
-                    return "R"
-                case "S":
-                    return "P"
+        match lastBotMove:
+            case "R":
+                return "S"
+            case "P":
+                return "R"
+            case "S":
+                return "P"
     
     def usualNextMoveBot(self, userInputHistory):
         # botID = 5
@@ -144,16 +153,24 @@ class RSP_Bot():
         # Keep track of current move
         currentMove = len(userInputHistory)
 
+        votingList = [] # list to tally up votes
+
         # if not history just return random
         if currentMove == 0:
-            return random.choice(self.choices)
+            for method in self.methodList:
+                # initialize random votes for first round to keep voting history aligned
+                vote = random.choice(self.choices)
+                votingList.append(vote)
+            # save votingList in voting batch history
+            self.votingHistory.append(votingList)
+            return votingList[0] # return first random
+            
 
         # update bot scores based on previous history
-        self.updateBotScores(userInputHistory, self.methodList)
+        self.updateBotScores(userInputHistory)
 
 
         # Voting stage
-        votingList = [] # list to tally up votes
 
         storeBotID = self.botID # will change botID while cycling methods
 
@@ -163,9 +180,6 @@ class RSP_Bot():
             vote = self.make_move(botInputHistory,userInputHistory,botWinHistory)
             votingList.append(vote)
         
-
-        print(votingList) # print ballet for debuging
-        print(self.botScore) # print method scores for debugging
 
         self.botID = storeBotID # reassign botID
         # init hashMap
@@ -184,8 +198,11 @@ class RSP_Bot():
 
             moveMap[item] += votingPower
 
-        print(moveMap) # print for debugging purposes
-        
+        # DEBUGGING
+        # print(f"vote list: {votingList}") # print ballet for debuging
+        # print(f"botScores: {self.botScore}") # print method scores for debugging
+        # print(f"moveMap {moveMap}") # print for debugging purposes
+
         # bot's desired vote
         predictedBotMove = max(moveMap, key=moveMap.get)
 
@@ -196,6 +213,7 @@ class RSP_Bot():
     
 
     def againstMajorityBot(self, userInputHistory):
+        # bot id = 7
         majorityVote = self.majorityBot(userInputHistory)
 
         # choose the losing move from majority bot's perspective
@@ -206,6 +224,59 @@ class RSP_Bot():
                 return "S"
             case "S":
                 return "R"
+    def copyCatBot(self, userInputHistory):
+        # bot id = 8
+        if userInputHistory == []:
+            lastMove = random.choice(self.choices)
+        else:
+            lastMove = userInputHistory[-1]
+        return lastMove
+    
+    def assumeClockWiseMoveBot(self, userInputHistory):
+        # bot id = 9
+        if userInputHistory == []:
+            lastMove = random.choice(self.choices)
+        else:
+            lastMove = userInputHistory[-1]
+        # assume next move will be clockwise R -> P -> S
+        match lastMove:
+            case "R":
+                nextMove = "P"
+            case "P":
+                nextMove = "S"
+            case "S":
+                nextMove = "R"
+        # Beat next predicted move
+        match nextMove:
+            case "R":
+                return "P"
+            case "P":
+                return "S"
+            case "S":
+                return "R" 
+    def assumeCounterClockWiseMoveBot(self, userInputHistory):
+        # bot id = 10
+        if userInputHistory == []:
+            lastMove = random.choice(self.choices)
+        else:
+            lastMove = userInputHistory[-1]
+        # assume next move will be clockwise R <- P <- S
+        match lastMove:
+            case "R":
+                nextMove = "S"
+            case "P":
+                nextMove = "R"
+            case "S":
+                nextMove = "P"
+        # Beat next predicted move
+        match nextMove:
+            case "R":
+                return "P"
+            case "P":
+                return "S"
+            case "S":
+                return "R"     
+
 
     # --------------------helper methods-------------------------------------------
     def evaluteResult(self, userInput, botInput):
@@ -231,18 +302,23 @@ class RSP_Bot():
 
         return userResult
     
-    def updateBotScores(self, userInputHistory, methodList):
-        for move in userInputHistory:
-            for voteBatch in self.votingHistory:
+    def updateBotScores(self, userInputHistory):
+        # Loop through each move in userInputHistory along with its corresponding vote batch
+        for i, move in enumerate(userInputHistory):
+            if i < len(self.votingHistory):
+                voteBatch = self.votingHistory[i]
+                # Loop through each vote in the vote batch
                 for index, vote in enumerate(voteBatch):
-                    bot = methodList[index]
-                    outcome = self.evaluteResult(move, vote) # 2 bot loses, 0 draw, 1 bot wins
-                    # penalize loses, record scores, do not punish or reward draws
+                    bot = self.methodList[index]
+                    outcome = self.evaluteResult(move, vote)  # 2 bot loses, 0 draw, 1 bot wins
+                    # DEBUGGING
+                    print(f"Move: {move}, Vote: {vote}, Bot: {bot}, Outcome: {outcome}")
+                    # Reward system
                     if outcome == 2:
-                        self.botScore[bot] -=1
+                        self.botScore[bot] -= 1
                     elif outcome == 1:
-                        self.botScore[bot] +=1
+                        self.botScore[bot] += 1
                     elif outcome == 0:
-                        self.botScore[bot] -= 0.5 # take away half a point for drawing
-
+                        self.botScore[bot] -= 1  # penalty for drawing
+        return self.botScore
             

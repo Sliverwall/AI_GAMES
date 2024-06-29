@@ -12,8 +12,6 @@ class Base_Root:
         # Main landing page (could be any widget)
         MAIN_HEIGHT = 300
         MAIN_WIDTH = 500
-        # self.main_frame = tk.Frame(self.root, width=MAIN_WIDTH, height=MAIN_HEIGHT, bg='lightgray')
-        # self.main_frame.pack(padx=20, pady=20)
 
         
         self.root.geometry(f"{MAIN_WIDTH}x{MAIN_HEIGHT}")
