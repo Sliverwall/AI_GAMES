@@ -10,10 +10,10 @@ class RSP_Bot():
 
         # bot traits
         self.soreLoser = traits # trait that causes bot to switch weights if lost twice in row
-        self.shortMemory = traits # trait that causes bot to discard weights every 5th turn
+        self.shortMemory = False # trait that causes bot to discard weights every 5th turn
 
         # Initialize methods
-        self.methodList = [1,2,3,4,5,7,8,9, 10,11,12,13] # store use cases for main move method, exclude random
+        self.methodList = [1,2,3,4,5,7,8,9, 10,11,12,13,14,15] # store use cases for main move method, exclude random
         self.botScore = {1:0, # random
                     2:0, #counter
                     3:0, #majority
@@ -25,7 +25,9 @@ class RSP_Bot():
                     10:0, #assumeCounterClockWise
                     11:0, # assumeBackAndForth
                     12:0, # beatRandomMoveBot
-                    13:0 # againstUsualMove
+                    13:0, # againstUsualMove
+                    14:0, #winAgainMoveBot
+                    15:0 #ZJCBot
                     }
         
 
@@ -64,6 +66,10 @@ class RSP_Bot():
                 return self.beatRandomMoveBot()
             case 13:
                 return self.againstUsualMoveBot(userInputHistory)
+            case 14:
+                return self.winAgainMoveBot(userInputHistory, resultHistory)
+            case 15:
+                return self.ZJCBot(botInputHistory, resultHistory)
     def randomBot(self):
         # bot id = 1
         return random.choice(self.choices)
@@ -299,6 +305,7 @@ class RSP_Bot():
                 return "R"     
 
     def backAndForthMoveBot(self, userInputHistory):
+        # bot id = 11
         lastTwoMoves = userInputHistory[-2:]
 
         # assume the last two moves are pairs that will repeat
@@ -312,6 +319,7 @@ class RSP_Bot():
             case "S":
                 return "R"
     def beatRandomMoveBot(self):
+        # bot id = 12
         # assume user is using psudoGenerator
         predicatedUserChoice = random.choice(self.choices)
 
@@ -323,6 +331,7 @@ class RSP_Bot():
             case "S":
                 return "R"
     def againstUsualMoveBot(self, userInputHistory):
+        # bot id = 13
         usualMoveOutcome = self.usualNextMoveBot(userInputHistory)
 
         match usualMoveOutcome:
@@ -332,6 +341,51 @@ class RSP_Bot():
                 return "S"
             case "S":
                 return "R"
+    
+    def winAgainMoveBot(self, userInputHistory, resultHistory):
+        # bot id = 14
+        # assumes user will repeat winning moves and drawing moves, and avoid losing moves
+        # similar to counter-clockwise bot, but only believes counter-clockwise pattern if user is losing
+        if resultHistory == 0:
+            return random.choice(self.choices) # vote for random move if no history
+        else:
+            lastMove = userInputHistory[-1]
+            if resultHistory[-1] == 1: # if user lost, assume they will make what would have been the winning move
+                match lastMove:
+                    case "R":
+                        return "S" # if rock lost, then that means winning move was paper
+                    case "P":
+                        return "R"
+                    case "S":
+                        return "P"
+            else: # user either tied or won so assume will repeat move
+                match lastMove:
+                    case "R":
+                        return "P"
+                    case "P":
+                        return "S"
+                    case "S":
+                        return "R"
+
+    def ZJCBot(self, botInputHistory, resultHistory):
+        # bot id = 15
+        # The Zhejiang Cycle. Method developed from studying 18k games.
+        # if winning or losing, move counter clock-wise. If draw, just repeat
+        if resultHistory == 0:
+            return random.choice(self.choices) # vote for random move if no history
+        else:
+            lastMove = botInputHistory[-1]
+            if resultHistory[-1] == 1 or resultHistory[-1] == 2 : # if bot wins or loses, go counter clock-wise, else repeat
+                match lastMove:
+                    case "R":
+                        return "S" 
+                    case "P":
+                        return "R"
+                    case "S":
+                        return "P"
+            else: # bot tied, so just repeat
+                return lastMove
+
     # --------------------helper methods-------------------------------------------
     def evaluteResult(self, userInput, botInput):
 
@@ -364,11 +418,12 @@ class RSP_Bot():
                 self.botScore[key] = 0
 
         # Sore Loser traint, flips weights if lost two in a row
-        if self.soreLoser and len(resultHisotry) > 3 and sum(resultHisotry[-3:]) >= 4:
-            print("FLIPING SIGNS")
-            # reset scores if two loses in a row
+        if self.soreLoser and len(resultHisotry) > 3 and sum(resultHisotry[-2:]) == 4:
+            # flip scores if two loses in a row
+            print(f"Result history from past two {resultHisotry[-2:]}")
+            print("I AM GOING BACK TO RANDOM")
             for key in self.botScore.keys():
-                self.botScore[key] = self.botScore[key]*-1 # flip sign of score if losing 2 times in row 
+                self.botScore[key] = self.botScore[key] * -1
 
                 
         # Loop through each move in userInputHistory along with its corresponding vote batch
