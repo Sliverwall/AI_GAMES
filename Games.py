@@ -2,6 +2,7 @@ import tkinter as tk
 from tkinter import messagebox
 from Bots import RSP_Bot
 from SQL_Query import SQL_Query
+from random import choice
 class RockPaperScissors:
     def __init__(self, root):
         self.root = root
@@ -10,12 +11,13 @@ class RockPaperScissors:
 
         self.botInputHistory = []
         self.userInputHistory = []
+        self.resultHistory = []
 
         # initialize bot manually for now
         self.botID = 6
         self.bot = RSP_Bot(self.botID)
 
-        
+        self.choices = ["R", "P", "S"]
         rock = "R"
         paper = "P"
         scissors = "S"
@@ -59,9 +61,11 @@ class RockPaperScissors:
         
 
     def play_game(self, userInput):
-
+        
+        if self.userName == "random":
+            userInput = choice(self.choices)
         # determine bot move using custom bot's moves
-        botInput = self.bot.make_move(self.botInputHistory,self.userInputHistory)
+        botInput = self.bot.make_move(self.botInputHistory,self.userInputHistory,self.resultHistory)
 
         # update current game's move history in memory
         self.botInputHistory.append(botInput)
@@ -70,9 +74,8 @@ class RockPaperScissors:
         # detemrine result
         result = self.evaluteResult(userInput, botInput)
 
-            
-
-
+        # result history
+        self.resultHistory.append(result)    
 
         # Update game table
         self.database.updateGame(self.gameID, result)
@@ -81,6 +84,9 @@ class RockPaperScissors:
         win = 2
         draw = 0
         lose = 1
+
+        # return lost history
+
 
         inputDisplay = {"R": "Rock",
                         "P": "Paper",

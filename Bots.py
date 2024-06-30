@@ -3,13 +3,17 @@ import math
 
 
 class RSP_Bot():
-    def __init__(self, botID) -> None:
+    def __init__(self, botID, traits=True) -> None:
         self.choices = ["R", "P", "S"]
         self.botID = botID
         self.votingHistory = []
 
+        # bot traits
+        self.soreLoser = traits # trait that causes bot to switch weights if lost twice in row
+        self.shortMemory = traits # trait that causes bot to discard weights every 5th turn
+
         # Initialize methods
-        self.methodList = [1,2,3,4,5,7,8,9, 10] # store use cases for main move method, exclude random
+        self.methodList = [1,2,3,4,5,7,8,9, 10,11,12,13] # store use cases for main move method, exclude random
         self.botScore = {1:0, # random
                     2:0, #counter
                     3:0, #majority
@@ -18,15 +22,19 @@ class RSP_Bot():
                     7:0, #againstMajority
                     8:0, #copyCat
                     9:0, #assumeClockwise
-                    10:0 #assumeCounterClockWise
+                    10:0, #assumeCounterClockWise
+                    11:0, # assumeBackAndForth
+                    12:0, # beatRandomMoveBot
+                    13:0 # againstUsualMove
                     }
+        
 
         # reward points
         self.winBonus = 1
         self.loseBouns = -1
         self.drawBonus = -0.5
  
-    def make_move(self, botInputHistory, userInputHistory, botWinHisotry):
+    def make_move(self, botInputHistory, userInputHistory,resultHistory):
         # determine method to use based off botID
 
         match self.botID:
@@ -41,7 +49,7 @@ class RSP_Bot():
             case 5:
                 return self.usualNextMoveBot(userInputHistory)
             case 6:
-                return self.votingBot(userInputHistory,botInputHistory)
+                return self.votingBot(userInputHistory,botInputHistory,resultHistory)
             case 7:
                 return self.againstMajorityBot(userInputHistory)
             case 8:
@@ -50,6 +58,12 @@ class RSP_Bot():
                 return self.assumeClockWiseMoveBot(userInputHistory)
             case 10:
                 return self.assumeCounterClockWiseMoveBot(userInputHistory)
+            case 11:
+                return self.backAndForthMoveBot(userInputHistory)
+            case 12:
+                return self.beatRandomMoveBot()
+            case 13:
+                return self.againstUsualMoveBot(userInputHistory)
     def randomBot(self):
         # bot id = 1
         return random.choice(self.choices)
@@ -156,7 +170,7 @@ class RSP_Bot():
                 return "S"
             case "S":
                 return "R"
-    def votingBot(self, userInputHistory, botInputHistory):
+    def votingBot(self, userInputHistory, botInputHistory,resultHisotry):
         # Keep track of current move
         currentMove = len(userInputHistory)
 
@@ -174,7 +188,7 @@ class RSP_Bot():
             
 
         # update bot scores based on previous history
-        self.updateBotScores(userInputHistory)
+        self.updateBotScores(userInputHistory, resultHisotry)
 
 
         # Voting stage
@@ -183,7 +197,7 @@ class RSP_Bot():
 
         for method in self.methodList:
             self.botID = method
-            vote = self.make_move(botInputHistory,userInputHistory)
+            vote = self.make_move(botInputHistory,userInputHistory,resultHisotry)
             votingList.append(vote)
         
 
@@ -284,7 +298,40 @@ class RSP_Bot():
             case "S":
                 return "R"     
 
+    def backAndForthMoveBot(self, userInputHistory):
+        lastTwoMoves = userInputHistory[-2:]
 
+        # assume the last two moves are pairs that will repeat
+        predictedMove = lastTwoMoves[0]
+
+        match predictedMove:
+            case "R":
+                return "P"
+            case "P":
+                return "S"
+            case "S":
+                return "R"
+    def beatRandomMoveBot(self):
+        # assume user is using psudoGenerator
+        predicatedUserChoice = random.choice(self.choices)
+
+        match predicatedUserChoice:
+            case "R":
+                return "P"
+            case "P":
+                return "S"
+            case "S":
+                return "R"
+    def againstUsualMoveBot(self, userInputHistory):
+        usualMoveOutcome = self.usualNextMoveBot(userInputHistory)
+
+        match usualMoveOutcome:
+            case "R":
+                return "P"
+            case "P":
+                return "S"
+            case "S":
+                return "R"
     # --------------------helper methods-------------------------------------------
     def evaluteResult(self, userInput, botInput):
 
@@ -309,13 +356,21 @@ class RSP_Bot():
 
         return userResult
     
-    def updateBotScores(self, userInputHistory, resetHisotry = True):
-        # Determine the range of moves to check if resetting history
-        if resetHisotry:
-            if len(userInputHistory) % 5 == 0:
-                for key in self.botScore.keys():
-                    self.botScore[key] = 0
+    def updateBotScores(self, userInputHistory, resultHisotry):
 
+        # Determine the range of moves to check if resetting history
+        if self.shortMemory and len(userInputHistory) % 5 == 0:
+            for key in self.botScore.keys():
+                self.botScore[key] = 0
+
+        # Sore Loser traint, flips weights if lost two in a row
+        if self.soreLoser and len(resultHisotry) > 3 and sum(resultHisotry[-3:]) >= 4:
+            print("FLIPING SIGNS")
+            # reset scores if two loses in a row
+            for key in self.botScore.keys():
+                self.botScore[key] = self.botScore[key]*-1 # flip sign of score if losing 2 times in row 
+
+                
         # Loop through each move in userInputHistory along with its corresponding vote batch
         for i, move in enumerate(userInputHistory):
             if i < len(self.votingHistory):
