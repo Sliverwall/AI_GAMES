@@ -4,12 +4,12 @@ import numpy as np
 
 class RSP_Bot():
     def __init__(self, botID, greediness=0.3, decay=0.95) -> None:
-        self.choices = ["R", "P", "S"]
+        self.choices = [0, 1, 2] # R, P, S
         self.botID = botID
         self.votingHistory = []
 
         # bot traits
-        self.winnerTakesAll = False  # bot with highest score decides alone
+        self.winnerTakesAll = True  # bot with highest score decides alone
         self.greediness = greediness  # eplsion factor to determine how often to exploit strat
         self.decay = decay # decay reduces weight of earlier moves. t0 weight is 5% less than t1 for example
 
@@ -82,12 +82,12 @@ class RSP_Bot():
         
         # beat last user move
         match lastUserMove:
-            case "R":
-                return "P"
-            case "P":
-                return "S"
-            case "S":
-                return "R"
+            case 0:
+                return 1
+            case 1:
+                return 2
+            case 2:
+                return 0
     def majorityBot(self, userInputHistory):
         # bot id = 3
         # get history of user input, take most common move to be expected move
@@ -95,9 +95,9 @@ class RSP_Bot():
             predictedUserInput = random.choice(self.choices)
         else:
             # init hashMap
-            moveMap = {"R": 0,
-                       "P": 0,
-                       "S": 0}
+            moveMap = {0: 0,
+                       1: 0,
+                       2: 0}
             for userMove in userInputHistory:
                 moveMap[userMove] += 1
             # predict userInput based on majority input.
@@ -105,12 +105,12 @@ class RSP_Bot():
 
         # beat predicted user input
         match predictedUserInput:
-            case "R":
-                  return "P"
-            case "P":
-                return "S"
-            case "S":
-                return "R"
+            case 0:
+                  return 1
+            case 1:
+                return 2
+            case 2:
+                return 0
     def counterClockWiseMoveBot(self, botInputHistory):
         # bot id = 4
         # assume player is moving counter clock-wise
@@ -121,12 +121,12 @@ class RSP_Bot():
             lastBotMove = botInputHistory[-1]
             # match case then move counter clock-wise
         match lastBotMove:
-            case "R":
-                return "S"
-            case "P":
-                return "R"
-            case "S":
-                return "P"
+            case 0:
+                return 2
+            case 1:
+                return 0
+            case 2:
+                return 1
     
     def usualNextMoveBot(self, userInputHistory):
         # botID = 5
@@ -145,22 +145,15 @@ class RSP_Bot():
             predictedUserMove = random.choice(self.choices)
         else:
             # init hashMap
-            moveMap = {"RR": 0,
-                       "RP": 0,
-                       "RS": 0,
-                       "PR": 0,
-                       "PP": 0,
-                       "PS": 0,
-                       "SR": 0,
-                       "SP": 0,
-                       "SS": 0}
-            # sort userInput into pairs
-            # Pair each letter with its next neighbor using zip
-            pairedUserInput = ["".join(pair) for pair in zip(clonedUserInputHistory[0::2], clonedUserInputHistory[1::2])]
+            moveMap = {
+                (0, 0): 0, (0, 1): 0, (0, 2): 0,
+                (1, 0): 0, (1, 1): 0, (1, 2): 0,
+                (2, 0): 0, (2, 1): 0, (2, 2): 0
+            }
+
+            pairedUserInput = list(zip(clonedUserInputHistory[:-1], clonedUserInputHistory[1:]))
 
             for pair in pairedUserInput:
-                # only count pairs related to lastUserInput
-
                 if pair[0] == lastUserMove:
                     moveMap[pair] += 1
             
@@ -168,12 +161,12 @@ class RSP_Bot():
             predictedPair = max(moveMap, key=moveMap.get)
             predictedUserMove = predictedPair[1] # right char is the predicted move
         match predictedUserMove:
-            case "R":
-                  return "P"
-            case "P":
-                return "S"
-            case "S":
-                return "R"
+            case 0:
+                  return 1
+            case 1:
+                return 2
+            case 2:
+                return 0
     def votingBot(self, userInputHistory, botInputHistory,resultHisotry):
 
 
@@ -206,12 +199,12 @@ class RSP_Bot():
 
         self.botID = storeBotID # reassign botID
         # init hashMap
-        moveMap = {"R": 0,
-                    "P": 0,
-                    "S": 0}
+        moveMap = {0: 0,
+                    1: 0,
+                    2: 0}
         
         # scale voting power based on past performance
-        bestMethod, bestScore, bestVote = 1,0, "R" 
+        bestMethod, bestScore, bestVote = 1,0, 0 
         for index, item in enumerate(votingList):
             currentMethod = self.methodList[index]
             currentScore = self.botScore[currentMethod]
@@ -259,12 +252,12 @@ class RSP_Bot():
 
         # choose the losing move from majority bot's perspective
         match majorityVote:
-            case "R":
-                return "P"
-            case "P":
-                return "S"
-            case "S":
-                return "R"
+            case 0:
+                return 1
+            case 1:
+                return 2
+            case 2:
+                return 0
     def copyCatBot(self, userInputHistory):
         # bot id = 8
         if userInputHistory == []:
@@ -281,20 +274,20 @@ class RSP_Bot():
             lastMove = userInputHistory[-1]
         # assume next move will be clockwise R -> P -> S
         match lastMove:
-            case "R":
-                nextMove = "P"
-            case "P":
-                nextMove = "S"
-            case "S":
-                nextMove = "R"
+            case 0:
+                nextMove = 1
+            case 1:
+                nextMove = 2
+            case 2:
+                nextMove = 0
         # Beat next predicted move
         match nextMove:
-            case "R":
-                return "P"
-            case "P":
-                return "S"
-            case "S":
-                return "R" 
+            case 0:
+                return 1
+            case 1:
+                return 2
+            case 2:
+                return 0 
     def assumeCounterClockWiseMoveBot(self, userInputHistory):
         # bot id = 10
         if userInputHistory == []:
@@ -303,20 +296,20 @@ class RSP_Bot():
             lastMove = userInputHistory[-1]
         # assume next move will be clockwise R <- P <- S
         match lastMove:
-            case "R":
-                nextMove = "S"
-            case "P":
-                nextMove = "R"
-            case "S":
-                nextMove = "P"
+            case 0:
+                nextMove = 2
+            case 1:
+                nextMove = 0
+            case 2:
+                nextMove = 1
         # Beat next predicted move
         match nextMove:
-            case "R":
-                return "P"
-            case "P":
-                return "S"
-            case "S":
-                return "R"     
+            case 0:
+                return 1
+            case 1:
+                return 2
+            case 2:
+                return 0     
 
     def backAndForthMoveBot(self, userInputHistory):
         # bot id = 11
@@ -326,35 +319,35 @@ class RSP_Bot():
         predictedMove = userInputHistory[-2]
 
         match predictedMove:
-            case "R":
-                return "P"
-            case "P":
-                return "S"
-            case "S":
-                return "R"
+            case 0:
+                return 1
+            case 1:
+                return 2
+            case 2:
+                return 0
     def beatRandomMoveBot(self):
         # bot id = 12
         # assume user is using psudoGenerator
         predicatedUserChoice = random.choice(self.choices)
 
         match predicatedUserChoice:
-            case "R":
-                return "P"
-            case "P":
-                return "S"
-            case "S":
-                return "R"
+            case 0:
+                return 1
+            case 1:
+                return 2
+            case 2:
+                return 0
     def againstUsualMoveBot(self, userInputHistory):
         # bot id = 13
         usualMoveOutcome = self.usualNextMoveBot(userInputHistory)
 
         match usualMoveOutcome:
-            case "R":
-                return "P"
-            case "P":
-                return "S"
-            case "S":
-                return "R"
+            case 0:
+                return 1
+            case 1:
+                return 2
+            case 2:
+                return 0
     
     def winAgainMoveBot(self, userInputHistory, resultHistory):
         # bot id = 14
@@ -366,20 +359,20 @@ class RSP_Bot():
             lastMove = userInputHistory[-1]
             if resultHistory[-1] == 1: # if user lost, assume they will make what would have been the winning move
                 match lastMove:
-                    case "R":
-                        return "S" # if rock lost, then that means winning move was paper
-                    case "P":
-                        return "R"
-                    case "S":
-                        return "P"
+                    case 0:
+                        return 2 # if rock lost, then that means winning move was paper
+                    case 1:
+                        return 0
+                    case 2:
+                        return 1
             else: # user either tied or won so assume will repeat move
                 match lastMove:
-                    case "R":
-                        return "P"
-                    case "P":
-                        return "S"
-                    case "S":
-                        return "R"
+                    case 0:
+                        return 1
+                    case 1:
+                        return 2
+                    case 2:
+                        return 0
 
     def ZJCBot(self, botInputHistory, resultHistory):
         # bot id = 15
@@ -391,12 +384,12 @@ class RSP_Bot():
             lastMove = botInputHistory[-1]
             if resultHistory[-1] == 1 or resultHistory[-1] == 2 : # if bot wins or loses, go counter clock-wise, else repeat
                 match lastMove:
-                    case "R":
-                        return "S" 
-                    case "P":
-                        return "R"
-                    case "S":
-                        return "P"
+                    case 0:
+                        return 2 
+                    case 1:
+                        return 0
+                    case 2:
+                        return 1
             else: # bot tied, so just repeat
                 return lastMove
     
@@ -410,12 +403,12 @@ class RSP_Bot():
         if resultInputHistory[-1] == 0:
             predictedMove = botInputHistory[-1]
             match predictedMove:
-                case "R":
-                    return "P"
-                case "P":
-                    return "S"
-                case "S":
-                    return "R"
+                case 0:
+                    return 1
+                case 1:
+                    return 2
+                case 2:
+                    return 0
         else:
             return botInputHistory[-1]
 
@@ -426,38 +419,41 @@ class RSP_Bot():
         else:
             predictedMove = userInputHistory[-3]
             match predictedMove:
-                case "R":
-                    vote = "P"
-                case "P":
-                    vote = "S"
-                case "S":
-                    vote = "R"
+                case 0:
+                    vote = 1
+                case 1:
+                    vote = 2
+                case 2:
+                    vote = 0
         return vote
 
 
     # --------------------helper methods-------------------------------------------
     def evaluteResult(self, userInput, botInput):
 
-        joinedInput = f"{userInput}_{botInput}"
+        # R = 0, P = 1, S = 2
+        # win = 2, lose = 1, draw = 0
+         
+        resultMatrix = [
+             [0,0,0], # rock vs rock = 0 draw
+             [0,1,1], # rock vs paper = 1 lose
+             [0,2,2], # rock vs scissiors = 2 win
 
-        # set conditional values
-        win = 2
-        draw = 0
-        lose = 1
-        # resultDict to store user vs bot outcomes posibilities
-        resultDict = {"R_R": draw,
-                    "R_P": lose,
-                    "R_S": win,
-                    "P_R": win,
-                    "P_P": draw,
-                    "P_S": lose,
-                    "S_R": lose,
-                    "S_P": win,
-                    "S_S": draw}
-        # user result as stored in resultDict
-        userResult = resultDict[joinedInput] # botResult = 0 - userResult
+             [1,0,2], # paper vs rock = 2 win
+             [1,1,0], # paper vs paper = 0 draw
+             [1,2,1], # paper vs scissiors = 1 lose
 
-        return userResult
+             [2,0,1], # scissors vs rock = 1 lose
+             [2,1,2], # scissors vs paper = 2 win
+             [2,2,0]  # scissors vs scissors = 0 draw
+         ]
+
+        # Determine outcome using resultMatrix
+        for entry in resultMatrix:
+            if entry[0] == userInput and entry[1] == botInput:
+                result = entry[2]  # Return the result (0 for draw, 1 for lose, 2 for win)
+
+        return result
     
     def updateBotScores(self, userInputHistory):        
         # Loop through each new move in userInputHistory along with its corresponding vote batch

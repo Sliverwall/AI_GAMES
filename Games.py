@@ -17,10 +17,10 @@ class RockPaperScissors:
         self.botID = 6
         self.bot = RSP_Bot(self.botID)
 
-        self.choices = ["R", "P", "S"]
-        rock = "R"
-        paper = "P"
-        scissors = "S"
+        self.choices = [0, 1, 2]
+        rock = 0
+        paper = 1
+        scissors = 2
 
         # get current user information
         userData = self.database.getActiveUser()
@@ -88,9 +88,9 @@ class RockPaperScissors:
         # return lost history
 
 
-        inputDisplay = {"R": "Rock",
-                        "P": "Paper",
-                        "S": "Scissors"}
+        inputDisplay = {0: "Rock",
+                        1: "Paper",
+                        2: "Scissors"}
         
         outcomeDisplay = {win: "You Won!",
                           draw: "Game Drew.",
@@ -115,26 +115,29 @@ class RockPaperScissors:
 
     def evaluteResult(self, userInput, botInput):
 
-        joinedInput = f"{userInput}_{botInput}"
+        # R = 0, P = 1, S = 2
+        # win = 2, lose = 1, draw = 0
+         
+        resultMatrix = [
+             [0,0,0], # rock vs rock = 0 draw
+             [0,1,1], # rock vs paper = 1 lose
+             [0,2,2], # rock vs scissiors = 2 win
 
-        # set conditional values
-        win = 2
-        draw = 0
-        lose = 1
-        # resultDict to store user vs bot outcomes posibilities
-        resultDict = {"R_R": draw,
-                    "R_P": lose,
-                    "R_S": win,
-                    "P_R": win,
-                    "P_P": draw,
-                    "P_S": lose,
-                    "S_R": lose,
-                    "S_P": win,
-                    "S_S": draw}
-        # user result as stored in resultDict
-        userResult = resultDict[joinedInput] # botResult = 0 - userResult
+             [1,0,2], # paper vs rock = 2 win
+             [1,1,0], # paper vs paper = 0 draw
+             [1,2,1], # paper vs scissiors = 1 lose
 
-        return userResult
+             [2,0,1], # scissors vs rock = 1 lose
+             [2,1,2], # scissors vs paper = 2 win
+             [2,2,0]  # scissors vs scissors = 0 draw
+         ]
+
+        # Determine outcome using resultMatrix
+        for entry in resultMatrix:
+            if entry[0] == userInput and entry[1] == botInput:
+                result = entry[2]  # Return the result (0 for draw, 1 for lose, 2 for win)
+
+        return result
     
 
 
