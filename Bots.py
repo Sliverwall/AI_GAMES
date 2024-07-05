@@ -2,53 +2,52 @@ import random
 import math
 import numpy as np
 
-
 class RSP_Bot():
-    def __init__(self, botID, traits=True) -> None:
+    def __init__(self, botID, greediness=0.3) -> None:
         self.choices = ["R", "P", "S"]
         self.botID = botID
         self.votingHistory = []
 
         # bot traits
-        self.shortMemory = False # trait that causes bot to discard weights every 5th turn
-        self.winnerTakesAll = False # bot with highest score decides alone
-        self.greediness = 0.3 # eplsion factor to determine how often to expliot strat
+        self.shortMemory = False  # trait that causes bot to discard weights every 5th turn
+        self.winnerTakesAll = False  # bot with highest score decides alone
+        self.greediness = greediness  # eplsion factor to determine how often to exploit strat
 
-        
         # Initialize methods
-        self.methodList = [1,2,3,4,5,7,8,9,10,11,12,13,14,15,16,17] # store use cases for main move method, exclude random
-        self.botScore = {1:0, # random
-                    2:0, #counter
-                    3:0, #majority
-                    4:0, #counterClockWise
-                    5:0, #usualNextMove
-                    7:0, #againstMajority
-                    8:0, #copyCat
-                    9:0, #assumeClockwise
-                    10:0, #assumeCounterClockWise
-                    11:0, # assumeBackAndForth
-                    12:0, # beatRandomMoveBot
-                    13:0, # againstUsualMove
-                    14:0, #winAgainMoveBot
-                    15:0, #ZJCBot
-                    16:0, #assumeRepeatDrawBot
-                    17:0 # assumeThreeMoveSequence
-                    }
+        self.methodList = [1, 2, 3, 4, 5, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17]  # store use cases for main move method, exclude random
+
+        self.botScore = {1: 0,  # random
+                         2: 0,  # counter
+                         3: 0,  # majority
+                         4: 0,  # counterClockWise
+                         5: 0,  # usualNextMove
+                         7: 0,  # againstMajority
+                         8: 0,  # copyCat
+                         9: 0,  # assumeClockwise
+                         10: 0,  # assumeCounterClockWise
+                         11: 0,  # assumeBackAndForth
+                         12: 0,  # beatRandomMoveBot
+                         13: 0,  # againstUsualMove
+                         14: 0,  # winAgainMoveBot
+                         15: 0,  # ZJCBot
+                         16: 0,  # assumeRepeatDrawBot
+                         17: 0  # assumeThreeMoveSequence
+                         }
+
         # store info
-        self.pulledGreed = 0 # number of times decided to exploit
-        self.methodPulled = np.zeros(len(self.methodList)) # number of times method was best method to choose
-        
+        self.pulledGreed = 0  # number of times decided to exploit
+        self.methodPulled = np.zeros(len(self.methodList))  # number of times method was best method to choose
 
         # reward points
         self.winBonus = 1
-        self.loseBouns = 0
+        self.loseBonus = -1
         self.drawBonus = 0
- 
-    def make_move(self, botInputHistory, userInputHistory,resultHistory):
+
+    def make_move(self, botInputHistory, userInputHistory, resultHistory):
         # determine method to use based off botID
 
         match self.botID:
-            case 1: 
+            case 1:
                 return self.randomBot()
             case 2:
                 return self.counterBot(userInputHistory)
@@ -59,7 +58,7 @@ class RSP_Bot():
             case 5:
                 return self.usualNextMoveBot(userInputHistory)
             case 6:
-                return self.votingBot(userInputHistory,botInputHistory,resultHistory)
+                return self.votingBot(userInputHistory, botInputHistory, resultHistory)
             case 7:
                 return self.againstMajorityBot(userInputHistory)
             case 8:
@@ -82,6 +81,9 @@ class RSP_Bot():
                 return self.assumeRepeatDrawBot(botInputHistory, resultHistory)
             case 17:
                 return self.assumeThreeMoveSequence(userInputHistory)
+            case 100:
+                return self.votingBot(userInputHistory, botInputHistory, resultHistory)
+    
     def randomBot(self):
         # bot id = 1
         return random.choice(self.choices)
@@ -189,24 +191,23 @@ class RSP_Bot():
             case "S":
                 return "R"
     def votingBot(self, userInputHistory, botInputHistory,resultHisotry):
-        # Keep track of current move
-        currentMove = len(userInputHistory)
+
+
+        # Ensure at least 3 game history entries
+        while len(userInputHistory) < 3:
+            userRandomChoice = random.choice(self.choices)
+            botRandomChoice = random.choice(self.choices)
+            userInputHistory.append(userRandomChoice)
+            botInputHistory.append(botRandomChoice)
+            resultHisotry.append(self.evaluteResult(userRandomChoice, botRandomChoice))
+            votingList = [random.choice(self.choices) for _ in self.methodList]
+            self.votingHistory.append(votingList)
 
         votingList = [] # list to tally up votes
-
-        # if not history just return random
-        if currentMove == 0:
-            for method in self.methodList:
-                # initialize random votes for first round to keep voting history aligned
-                vote = random.choice(self.choices)
-                votingList.append(vote)
-            # save votingList in voting batch history
-            self.votingHistory.append(votingList)
-            return votingList[0] # return first random
             
 
         # update bot scores based on previous history
-        self.updateBotScores(userInputHistory, resultHisotry)
+        self.updateBotScores(userInputHistory)
 
 
         # Voting stage
@@ -245,8 +246,8 @@ class RSP_Bot():
         # DEBUGGING
         # print(f"vote list: {votingList}") # print ballet for debuging
         # print(f"User last move: {userInputHistory[-1]}")
-        print(f"botScores: {self.botScore}") # print method scores for debugging
-        print(f"moveMap {moveMap}") # print for debugging purposes
+        # print(f"botScores: {self.botScore}") # print method scores for debugging
+        # print(f"moveMap {moveMap}") # print for debugging purposes
         # print(f"Current best method: {bestMethod}, with score of: {bestScore} with vote of {bestVote}")
 
         # bot's desired 
@@ -474,20 +475,14 @@ class RSP_Bot():
 
         return userResult
     
-    def updateBotScores(self, userInputHistory, resultHisotry):
+    def updateBotScores(self, userInputHistory):
         # # reset scores as they will loop over entire set again
         for key in self.botScore.keys():
             self.botScore[key] = 0
         
-        # Determine the range of moves to check if resetting history
-        if self.shortMemory and len(userInputHistory) >= 0:
-            resultHisotry = resultHisotry[-5:]
-            userInputHistory = userInputHistory[-5:]
-
-                
         # Loop through each move in userInputHistory along with its corresponding vote batch
-        for i, move in enumerate(userInputHistory):
-            if i < len(self.votingHistory):
+        for i, move in enumerate(userInputHistory[-1]):
+            if i < len(self.votingHistory[-1]):
                 voteBatch = self.votingHistory[i]
                 # Loop through each vote in the vote batch
                 for index, vote in enumerate(voteBatch):
@@ -497,7 +492,7 @@ class RSP_Bot():
                     print(f"Move: {move}, Vote: {vote}, Bot: {bot}, Outcome: {outcome}")
                     # Reward system
                     if outcome == 2:
-                        self.botScore[bot] += self.loseBouns
+                        self.botScore[bot] += self.loseBonus
                     elif outcome == 1:
                         self.botScore[bot] += self.winBonus
                     elif outcome == 0:
