@@ -123,5 +123,5 @@ class RL_Bot():
 banditBot = RSP_Bot(100,greediness=0.2)
 rlBot = RL_Bot()
 
-rlBot.trainAgent(banditBot,1000)
-rlBot.testAgent(banditBot,100)
+rlBot.trainAgent(banditBot,100)
+rlBot.testAgent(banditBot,10)
