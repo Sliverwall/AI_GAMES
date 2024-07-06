@@ -14,7 +14,7 @@ class RockPaperScissors:
         self.resultHistory = []
 
         # initialize bot manually for now
-        self.botID = 6
+        self.botID = 100
         self.bot = RSP_Bot(self.botID)
 
         self.choices = [0, 1, 2]

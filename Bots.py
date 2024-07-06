@@ -14,7 +14,7 @@ class RSP_Bot():
         self.decay = decay # decay reduces weight of earlier moves. t0 weight is 5% less than t1 for example
 
         # Initialize methods
-        self.methodList = [1, 2, 3, 4, 5, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17]  # store use cases for main move method, exclude random
+        self.methodList = [1, 2, 3, 4, 5, 6,7, 8, 9, 10, 11, 12, 13, 14, 15, 16]  # store use cases for main move method, exclude random
         self.botScore = {method: 0 for method in self.methodList}
         self.lastProcessedIndex = 3
 
@@ -29,7 +29,6 @@ class RSP_Bot():
 
     def make_move(self, botInputHistory, userInputHistory, resultHistory):
         # determine method to use based off botID
-
         match self.botID:
             case 1:
                 return self.randomBot()
@@ -42,28 +41,26 @@ class RSP_Bot():
             case 5:
                 return self.usualNextMoveBot(userInputHistory)
             case 6:
-                return self.votingBot(userInputHistory, botInputHistory, resultHistory)
-            case 7:
                 return self.againstMajorityBot(userInputHistory)
-            case 8:
+            case 7:
                 return self.copyCatBot(userInputHistory)
-            case 9:
+            case 8:
                 return self.assumeClockWiseMoveBot(userInputHistory)
-            case 10:
+            case 9:
                 return self.assumeCounterClockWiseMoveBot(userInputHistory)
-            case 11:
+            case 10:
                 return self.backAndForthMoveBot(userInputHistory)
-            case 12:
+            case 11:
                 return self.beatRandomMoveBot()
-            case 13:
+            case 12:
                 return self.againstUsualMoveBot(userInputHistory)
-            case 14:
+            case 13:
                 return self.winAgainMoveBot(userInputHistory, resultHistory)
-            case 15:
+            case 14:
                 return self.ZJCBot(botInputHistory, resultHistory)
-            case 16:
+            case 15:
                 return self.assumeRepeatDrawBot(botInputHistory, resultHistory)
-            case 17:
+            case 16:
                 return self.assumeThreeMoveSequence(userInputHistory)
             case 100:
                 return self.votingBot(userInputHistory, botInputHistory, resultHistory)
@@ -221,8 +218,8 @@ class RSP_Bot():
             moveMap[item] += votingPower
 
         # DEBUGGING
-        # print(f"vote list: {votingList}") # print ballet for debuging
-        # print(f"User last move: {userInputHistory[-1]}")
+        print(f"vote list: {votingList}") # print ballet for debuging
+        print(f"User last move: {userInputHistory[-1]}")
         print(f"botScores: {self.botScore}") # print method scores for debugging
         print(f"moveMap {moveMap}") # print for debugging purposes
         print(f"Current best method: {bestMethod}, with score of: {bestScore} with vote of {bestVote}")
@@ -430,7 +427,6 @@ class RSP_Bot():
 
     # --------------------helper methods-------------------------------------------
     def evaluteResult(self, userInput, botInput):
-
         # R = 0, P = 1, S = 2
         # win = 2, lose = 1, draw = 0
          
@@ -455,9 +451,14 @@ class RSP_Bot():
 
         return result
     
-    def updateBotScores(self, userInputHistory):        
+    def updateBotScores(self, userInputHistory):
+
+        # refresh scores as earlier votes will count for less
+        for score in self.botScore:
+            self.botScore[score] = 0
+
         # Loop through each new move in userInputHistory along with its corresponding vote batch
-        for i in range(self.lastProcessedIndex, len(userInputHistory)):
+        for i in range(len(userInputHistory)):
             if i < len(self.votingHistory):
                 voteBatch = self.votingHistory[i]
                 weight = self.decay ** (len(userInputHistory) - i - 1)  # Calculate weight based on decay factor
@@ -476,7 +477,5 @@ class RSP_Bot():
                     elif outcome == 0:
                         self.botScore[bot] += self.drawBonus * weight
         
-        # Update the last processed index
-        self.lastProcessedIndex = len(userInputHistory)
         return self.botScore
             
